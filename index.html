@@ -42,6 +42,41 @@
   <script src="bootstrap.bundle.min.js"></script>
   <script src="fabric.min.js"></script>
   <script>
+var Edge = fabric.util.createClass(fabric.Line, {
+
+type: 'edge',
+// initialize can be of type function(options) or function(property, options), like for text.
+// no other signatures allowed.
+initialize: function(points, options){
+  console.log("Edge")
+  options = options || {};
+  this.points = points || [];
+  this.lockScalingFlip = true
+  this.lockScalingX = true
+  this.lockScalingY = true
+  this.callSuper('initialize',points, options);
+  this.set('label', options.label || '');
+},
+
+toObject: function() {
+  return fabric.util.object.extend(this.callSuper('toObject'), {
+    label: this.get('label')
+  });
+},
+
+_render: function(ctx) {
+  this.callSuper('_render', ctx);
+
+  ctx.font = '12px Helvetica';
+  ctx.fillStyle = '#333';
+  ctx.fillText(this.label,  -this.width/2, -this.height/2 + 20);
+  // ctx.fillText(this.label, -this.width/2, -this.height/2 + 20);
+}
+});
+
+
+
+
     console.log("OK")
     var line, isDown;
     var drawing = false;
@@ -87,7 +122,7 @@ canvas.on('mouse:down', function(o){
   var pointer = canvas.getPointer(o.e);
   var points = [ pointer.x, pointer.y, pointer.x, pointer.y ];
 
-    line = new fabric.Line(points, {
+    line = new Edge(points, {
       strokeWidth: 1,
       fill: 'black',
       stroke: 'black',
@@ -113,6 +148,8 @@ canvas.on('mouse:move', function(o){
   } else {
     line.set({ x2: pointer.x, y2: pointer.y });
   }
+  var len = Math.sqrt(Math.pow(line.x2 - line.x1, 2) + Math.pow(line.y2 - line.y1,2))
+  line.label = Math.round(len * 10) / 100;
   canvas.renderAll();
 });
 
