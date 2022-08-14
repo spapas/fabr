@@ -23,7 +23,7 @@
     </form>
     <div class="row">
       <div class="col-md-4">
-        <button class="btn btn-info" type="button">ok</button>
+        <button id="drawing-mode" class="btn btn-info">Cancel drawing mode</button>
       </div>
       <div class="col-md-4">
         <button class="btn btn-info" type="button">ok</button>
@@ -43,11 +43,83 @@
   <script src="fabric.min.js"></script>
   <script>
     console.log("OK")
+    var line, isDown;
+    var drawing = false;
+    var $ = function(id){return document.getElementById(id)};
 
-    var canvas = new fabric.Canvas("c");
+    var drawingModeEl = $('drawing-mode');
+    var canvas = new fabric.Canvas("c", {
+      isDrawingMode: false,
+      //freeDrawingBrush: new fabric.PencilBrush({ decimate: 8 })
+    });
     canvas.setHeight(window.innerHeight);
     canvas.setWidth(window.innerWidth);
     
+
+    drawingModeEl.onclick = function() {
+      drawing = !drawing;
+      if(drawing) {
+        canvas.selection = false;
+        drawingModeEl.innerHTML = 'Cancel drawing mode';
+      } else {
+        canvas.selection = true;
+        drawingModeEl.innerHTML = 'Cancel select mode';
+      }
+      /*
+    canvas.isDrawingMode = !canvas.isDrawingMode;
+    if (canvas.isDrawingMode) {
+      //drawingModeEl.innerHTML = 'Cancel drawing mode';
+      //drawingOptionsEl.style.display = '';
+    }
+    else {
+      //drawingModeEl.innerHTML = 'Enter drawing mode';
+      
+      //drawingOptionsEl.style.display = 'none';
+    }
+    */
+  };
+
+
+  
+canvas.on('mouse:down', function(o){
+  if (!drawing) return;
+  isDown = true;
+  var pointer = canvas.getPointer(o.e);
+  var points = [ pointer.x, pointer.y, pointer.x, pointer.y ];
+
+    line = new fabric.Line(points, {
+      strokeWidth: 1,
+      fill: 'black',
+      stroke: 'black',
+      originX: 'center',
+      originY: 'center'
+    });
+  
+  canvas.add(line);
+});
+
+canvas.on('mouse:move', function(o){
+  if (!drawing) return;
+  if (!isDown) return;
+  
+  var pointer = canvas.getPointer(o.e);
+  if(o.e.shiftKey) {
+    if( Math.abs(line.y1 - pointer.y) > Math.abs(line.x1 - pointer.x)) {
+      line.set({ y2: pointer.y, x2: line.x1 });
+    } else {
+      line.set({ x2: pointer.x, y2: line.y1 });
+    }
+    
+  } else {
+    line.set({ x2: pointer.x, y2: pointer.y });
+  }
+  canvas.renderAll();
+});
+
+canvas.on('mouse:up', function(o){
+  isDown = false;
+});
+    /*
     var text = new fabric.Textbox('Hello world From Fabric JS', {
       width: 250,
       cursorColor: "blue",
@@ -55,7 +127,7 @@
       left: 10
     });
     canvas.add(text)
-
+    */
     document.getElementById('imgLoader').onchange = function handleImage(e) {
       var reader = new FileReader();
       reader.onload = function (event) {
