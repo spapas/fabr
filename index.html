@@ -23,13 +23,13 @@
     </form>
     <div class="row">
       <div class="col-md-4">
-        <button id="drawing-mode" class="btn btn-info">Cancel drawing mode</button>
+        <button id="drawing-mode" class="btn btn-info">Drawing mode</button>
       </div>
       <div class="col-md-4">
-        <button class="btn btn-info" type="button">ok</button>
+        <button id="remove" class="btn btn-info" type="button">Remove</button>
       </div>
       <div class="col-md-4">
-        <button class="btn btn-info" type="button">ok</button>
+        <button  id="set-basic-unit" class="btn btn-info" type="button">Set basic unit</button>
       </div>
     </div>
     <div class="row">
@@ -55,26 +55,36 @@ initialize: function(points, options){
   this.lockScalingX = true
   this.lockScalingY = true
   this.callSuper('initialize',points, options);
+  this.set('basicUnit',  false)
   this.set('label', options.label || '');
 },
 
 toObject: function() {
   return fabric.util.object.extend(this.callSuper('toObject'), {
-    label: this.get('label')
+    label: this.get('label'),
+    basicUnit: this.get('basicUnit')
   });
 },
 
 _render: function(ctx) {
   this.callSuper('_render', ctx);
+  console.log("Render")
+  if(this.basicUnit == true) {
+    console.log("Render bu")
+    ctx.font = '16px Helvetica';
+    ctx.fillStyle = '#319';
+    ctx.fillText(this.label,  -this.width/2, -this.height/2 + 20);
+  } else {
+    console.log("Render no bu")
+    ctx.font = '11px Helvetica';
+    ctx.fillStyle = '#177';
+    ctx.fillText(this.label,  -this.width/2, -this.height/2 + 20);
+  }
 
-  ctx.font = '12px Helvetica';
-  ctx.fillStyle = '#333';
-  ctx.fillText(this.label,  -this.width/2, -this.height/2 + 20);
+  
   // ctx.fillText(this.label, -this.width/2, -this.height/2 + 20);
 }
 });
-
-
 
 
     console.log("OK")
@@ -83,22 +93,47 @@ _render: function(ctx) {
     var $ = function(id){return document.getElementById(id)};
 
     var drawingModeEl = $('drawing-mode');
+    var removeEl = $('remove');
+    var setBasicUnitEl = $('set-basic-unit');
     var canvas = new fabric.Canvas("c", {
       isDrawingMode: false,
       //freeDrawingBrush: new fabric.PencilBrush({ decimate: 8 })
     });
     canvas.setHeight(window.innerHeight);
-    canvas.setWidth(window.innerWidth);
-    
+    canvas.setWidth(window.innerWidth - window.innerWidth *0.1);
+    //canvas.objectCaching = false;
+
+
+    removeEl.onclick = function() {
+      canvas.getActiveObjects().forEach((obj) => {
+        canvas.remove(obj);
+      })
+    }
+
+    setBasicUnitEl.onclick = function() {
+      var ao = canvas.getActiveObject()
+      if (!ao || ao.type != 'edge') return ;
+      var aolen = getLen(ao);
+
+      canvas.getObjects().forEach((obj) => {
+        
+        obj.basicUnit = false 
+        obj.dirty = true
+        obj.label = fixRound(getLen(obj) / aolen);
+      });
+      ao.basicUnit = true;
+      ao.label = 1
+      canvas.renderAll()
+    }
 
     drawingModeEl.onclick = function() {
       drawing = !drawing;
       if(drawing) {
         canvas.selection = false;
-        drawingModeEl.innerHTML = 'Cancel drawing mode';
+        drawingModeEl.innerHTML = 'Select mode';
       } else {
         canvas.selection = true;
-        drawingModeEl.innerHTML = 'Cancel select mode';
+        drawingModeEl.innerHTML = 'Drawing mode';
       }
       /*
     canvas.isDrawingMode = !canvas.isDrawingMode;
@@ -123,7 +158,7 @@ canvas.on('mouse:down', function(o){
   var points = [ pointer.x, pointer.y, pointer.x, pointer.y ];
 
     line = new Edge(points, {
-      strokeWidth: 1,
+      strokeWidth: 2,
       fill: 'black',
       stroke: 'black',
       originX: 'center',
@@ -132,6 +167,16 @@ canvas.on('mouse:down', function(o){
   
   canvas.add(line);
 });
+
+function getLen(line) {
+  return Math.sqrt(Math.pow(line.x2 - line.x1, 2) + Math.pow(line.y2 - line.y1,2))
+}
+
+function fixRound(f) {
+  console.log(f)
+
+  return Math.round(f * 100) / 100
+}
 
 canvas.on('mouse:move', function(o){
   if (!drawing) return;
@@ -148,8 +193,8 @@ canvas.on('mouse:move', function(o){
   } else {
     line.set({ x2: pointer.x, y2: pointer.y });
   }
-  var len = Math.sqrt(Math.pow(line.x2 - line.x1, 2) + Math.pow(line.y2 - line.y1,2))
-  line.label = Math.round(len * 10) / 100;
+  var len = getLen(line);
+  line.label = fixRound(len);
   canvas.renderAll();
 });
 

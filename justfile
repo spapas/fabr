@@ -1,10 +1,10 @@
-https://github.com/casey/just
+# https://github.com/casey/just
 
 set shell := ["cmd.exe", "/c"]
 
 
-recipe-name:
-  echo This is a recipe!
+htserve:
+  py -3 -m http.server
 
 
 list:
