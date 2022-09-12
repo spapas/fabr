@@ -124,7 +124,7 @@ function initCanvas() {
       var vpt = this.viewportTransform;
       vpt[4] += e.clientX - this.lastPosX;
       vpt[5] += e.clientY - this.lastPosY;
-      //this.requestRenderAll();
+      this.requestRenderAll();
       this.lastPosX = e.clientX;
       this.lastPosY = e.clientY;
     }
