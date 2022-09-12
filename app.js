@@ -1,4 +1,16 @@
 
+const g_state = {
+  line: null, 
+  isDown: false, 
+  drawing: false, 
+  canvas: null,
+  w: 0,
+  h: 0,
+  bu: 1,
+  buPixels: 1,
+  buEdge: null
+};
+
 const Edge = fabric.util.createClass(fabric.Line, {
   type: 'edge',
 
@@ -9,7 +21,15 @@ const Edge = fabric.util.createClass(fabric.Line, {
     this.lockScalingX = true
     this.lockScalingY = true
     this.callSuper('initialize',points, options);
-    this.set('basicUnit',  false)
+    
+    if(g_state.buEdge == null) {
+      this.set('basicUnit',  true)
+      g_state.buEdge = this
+      //this.set('label', g_state.bu);
+    } else {
+      this.set('basicUnit',  false)
+    }
+
     this.set('label', options.label || '');
   },
 
@@ -25,19 +45,32 @@ const Edge = fabric.util.createClass(fabric.Line, {
     if(this.basicUnit == true) {
       ctx.font = '16px Helvetica';
       ctx.fillStyle = '#319';
+      g_state.buPixels = this.label * 1
+      this.label = g_state.bu
       ctx.fillText(this.label,  -this.width/2, -this.height/2 + 20);
     } else {
-      ctx.font = '11px Helvetica';
+      ctx.font = '14px Helvetica';
       ctx.fillStyle = '#177';
+      this.label = fixRound(this.label*1 * g_state.bu / g_state.buPixels)
       ctx.fillText(this.label,  -this.width/2, -this.height/2 + 20);
     }
 
   }
 });
 
+var $ = function(id) { return document.getElementById(id) };
 
 function getLen(line) {
-  return Math.sqrt(Math.pow(line.x2 - line.x1, 2) + Math.pow(line.y2 - line.y1,2))
+  return fixRound(Math.sqrt(Math.pow(line.x2 - line.x1, 2) + Math.pow(line.y2 - line.y1,2)))
+}
+
+function getAngle(line) { 
+  const dy = Math.abs(line.y1 - line.y2);
+  const dx = Math.abs(line.x1 - line.x2);
+  let theta = Math.atan2(dy, dx); // range (-PI, PI]
+  theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
+  if (theta < 0) theta = 360 + theta; // range [0, 360)
+  return fixRound(theta);
 }
 
 function fixRound(f) {
@@ -45,24 +78,27 @@ function fixRound(f) {
 }
 
 function init() {
+  console.log("INIT")
   initCanvas()
   initControls()
 }
 
-var $ = function(id) { return document.getElementById(id) };
 
-const g_state = {line: null, isDown: false, drawing: false, canvas: null};
+
 
 function initCanvas() {
-  console.log("INIT")
 
   g_state.canvas = new fabric.Canvas("c", {
     isDrawingMode: false,
-    //freeDrawingBrush: new fabric.PencilBrush({ decimate: 8 })
   });
   const canvas = g_state.canvas
-  canvas.setHeight(window.innerHeight);
-  canvas.setWidth(window.innerWidth - window.innerWidth *0.1);
+  const h = Math.round(window.innerHeight - window.innerHeight *0.2)
+  const w = Math.round(window.innerWidth - window.innerWidth *0.1)
+  canvas.setHeight(h);
+  canvas.setWidth(w);
+  
+  g_state.h = h;
+  g_state.w = w;
 
   canvas.on('mouse:wheel', function(opt) {
     var delta = opt.e.deltaY;
@@ -139,7 +175,13 @@ function initCanvas() {
       line.set({ x2: pointer.x, y2: pointer.y });
     }
     var len = getLen(line);
-    line.label = fixRound(len);
+    
+    if(this.basicUnit == true) {
+      line.label = g_state.basicUnit;
+    } else  {
+      line.label = fixRound(len);
+    }
+    
     canvas.renderAll();
   });
 
@@ -147,14 +189,57 @@ function initCanvas() {
     g_state.isDown = false;
   });
 
+  const sel = function(e) {
+    if(e.selected.length == 1) {
+      window.el = e.selected[0]
+      $('line-info').innerHTML = `
+        Length (px): ${getLen(el)}</br>
+        Length (bu): ${el.label}</br>
+        Angle: ${getAngle(el)} °</br>
+      `
+    }
+  }
+
+  canvas.on('selection:created', sel)
+  canvas.on('selection:updated', sel)
+
 }
 
 function initControls() {
 
-  var drawingModeEl = $('drawing-mode');
-  var removeEl = $('remove');
-  var setBasicUnitEl = $('set-basic-unit');
-  var imgLoader = $('imgLoader');
+  const drawingModeEl = $('drawing-mode');
+  const removeEl = $('remove');
+  const setBasicUnitEl = $('set-basic-unit');
+  const imgLoader = $('imgLoader');
+  const canvasWidth = $('canvas-width');
+  const canvasHeight = $('canvas-height');
+  const basicUnit = $('basic-unit');
+  
+  canvasWidth.value = g_state.w;
+  canvasHeight.value = g_state.h;
+
+  canvasWidth.onchange = function() {
+    const w = canvasWidth.value;
+    g_state.w = w 
+    g_state.canvas.setWidth(w)
+  }
+
+  canvasHeight.onchange = function() {
+    const h = canvasHeight.value;
+    g_state.h = h
+    g_state.canvas.setHeight(h)
+  }
+
+  basicUnit.onchange = function() {
+    const bu = basicUnit.value;
+    g_state.bu = bu
+    console.log("X")
+    g_state.canvas.getObjects().forEach((obj) => {
+      obj.dirty = true
+    })
+    g_state.canvas.renderAll();
+    
+  }
 
   removeEl.onclick = function() {
       g_state.canvas.getActiveObjects().forEach((obj) => {
