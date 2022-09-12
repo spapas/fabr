@@ -25,15 +25,19 @@
       <div class="col-md-8">
         <div class="row">
           <div class="col-md-4">
-            <button id="drawing-mode" class="btn btn-info">Drawing mode</button>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <button id="select-mode" class="btn btn-secondary active">Select mode</button>
+              <button id="drawing-mode" class="btn btn-secondary">Drawing mode</button>
+            </div>
           </div>
           <div class="col-md-4">
-            <button id="remove" class="btn btn-info" type="button">Remove</button>
+            <button id="remove" class="btn btn-secondary" type="button">Remove</button>
           </div>
           <div class="col-md-4">
-            <button  id="set-basic-unit" class="btn btn-info" type="button">Set basic unit</button>
+            <button  id="set-basic-unit" class="btn btn-secondary" type="button">Set basic unit</button>
           </div>
         </div>
+        <hr />
         <div class="row">
           <div class="col-md-4">
             Basic unit size: 
@@ -51,13 +55,14 @@
       </div> <!-- col-md-8-->
       <div class="col-md-4" >
         <div class=" alert alert-info" id="line-info">
-          <br />
+          Select 1 line<br />
           <br />
           <br />
           
         </div>
       </div>
     </div>
+    <hr />
     <div class="row">
       <div class="col-md-12">
         <canvas id="c"></canvas>

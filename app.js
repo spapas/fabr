@@ -83,9 +83,6 @@ function init() {
   initControls()
 }
 
-
-
-
 function initCanvas() {
 
   g_state.canvas = new fabric.Canvas("c", {
@@ -127,7 +124,7 @@ function initCanvas() {
       var vpt = this.viewportTransform;
       vpt[4] += e.clientX - this.lastPosX;
       vpt[5] += e.clientY - this.lastPosY;
-      this.requestRenderAll();
+      //this.requestRenderAll();
       this.lastPosX = e.clientX;
       this.lastPosY = e.clientY;
     }
@@ -186,6 +183,13 @@ function initCanvas() {
   });
 
   canvas.on('mouse:up', function(o){
+    if (!g_state.drawing) return;
+    if (!g_state.line) return;
+    console.log("MU")
+    if(getLen(g_state.line) == 0) {
+      g_state.canvas.remove(g_state.line);
+    }
+    g_state.line = null;
     g_state.isDown = false;
   });
 
@@ -197,6 +201,10 @@ function initCanvas() {
         Length (bu): ${el.label}</br>
         Angle: ${getAngle(el)} °</br>
       `
+    } else {
+      $('line-info').innerHTML = `
+      Select 1 line<br /><br /><br />
+      `
     }
   }
 
@@ -207,6 +215,7 @@ function initCanvas() {
 
 function initControls() {
 
+  const selectModeEl = $('select-mode');
   const drawingModeEl = $('drawing-mode');
   const removeEl = $('remove');
   const setBasicUnitEl = $('set-basic-unit');
@@ -233,7 +242,6 @@ function initControls() {
   basicUnit.onchange = function() {
     const bu = basicUnit.value;
     g_state.bu = bu
-    console.log("X")
     g_state.canvas.getObjects().forEach((obj) => {
       obj.dirty = true
     })
@@ -244,6 +252,7 @@ function initControls() {
   removeEl.onclick = function() {
       g_state.canvas.getActiveObjects().forEach((obj) => {
         g_state.canvas.remove(obj);
+        
     })
   }
 
@@ -261,18 +270,21 @@ function initControls() {
     });
     ao.basicUnit = true;
     ao.label = 1
+    g_state.buEdge = ao;
     canvas.renderAll()
   }
 
   drawingModeEl.onclick = function() {
-    g_state.drawing = !g_state.drawing;
-    if(g_state.drawing) {
-      g_state.canvas.selection = false;
-      drawingModeEl.innerHTML = 'Select mode';
-    } else {
-      g_state.canvas.selection = true;
-      drawingModeEl.innerHTML = 'Drawing mode';
-    }
+    g_state.drawing = true;
+    drawingModeEl.classList.add("active")
+    selectModeEl.classList.remove("active")
+  }
+
+  selectModeEl.onclick = function() {
+    g_state.drawing = false
+    drawingModeEl.classList.remove("active")
+    selectModeEl.classList.add("active")
+
   }
 
   imgLoader.onchange = function handleImage(e) {
